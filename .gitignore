@@ -1,0 +1,12 @@
+# Node dependencies
+node_modules/
+*/node_modules/
+
+# Downloaded videos
+backend/downloads/
+
+# OS files
+.DS_Store
+
+# Environment variables
+.env

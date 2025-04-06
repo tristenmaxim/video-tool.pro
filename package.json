@@ -1,0 +1,14 @@
+{
+    "name": "download-video.pro",
+    "version": "1.0.0",
+    "description": "Video downloader application",
+    "scripts": {
+        "start": "node backend/server.js",
+        "install-deps": "npm install && cd backend && npm install"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "nodemon": "^3.1.9"
+    }
+}
