@@ -3,117 +3,195 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DOWNLOAD‑VIDEO.PRO</title>
-
-    <!-- React + Babel (CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+    <title>Video Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+        font-family: system-ui, -apple-system, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .terminal {
+        font-family: 'Courier New', monospace;
+        background-color: #2d3748;
+        border: 2px solid #4a5568;
+        padding: 16px;
+        border-radius: 4px;
+      }
+      .terminal .yt-dlp {
+        color: #48bb78; /* green */
+      }
+      .terminal .download {
+        color: #4299e1; /* blue */
+      }
+      @media (max-height: 600px) {
+        h1 {
+          font-size: 1.5rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        .space-y-6 > * + * {
+          margin-top: 0.75rem !important;
+        }
+      }
+    </style>
   </head>
-  <body class="bg-black text-white">
-    <div id="root"></div>
-
-    <script type="text/babel">
-      const { useState } = React;
-
-      const DownloadButton = ({ onClick, loading }) => (
-        <button
-          onClick={onClick}
-          disabled={loading}
-          className={`w-full text-3xl font-bold border-4 border-black rounded p-2 transition-colors duration-200 ${loading ? 'bg-gray-600 cursor-not-allowed' : 'bg-white text-black hover:bg-gray-300'}`}
-        >
-          {loading ? 'DOWNLOADING…' : 'DOWNLOAD'}
-        </button>
-      );
-
-      const MessageBox = ({ message, type }) => {
-        const color = type === 'error' ? 'red' : 'green';
-        return (
-          <div className={`mt-4 w-3/4 border-4 border-${color}-600 p-4 rounded-lg text-xl text-${color}-400`}>
-            {message}
+  <body>
+    <div class="h-screen flex flex-col items-center justify-center p-4">
+      <h1 class="text-4xl md:text-5xl mb-4 pb-2 border-b-4 border-white">Youtube TikTok Instagram Video Downloader</h1>
+      
+      <div class="w-full max-w-3xl flex-1 flex flex-col justify-center max-h-[70vh]">
+        <div class="space-y-4 md:space-y-6">
+          <input
+            type="text"
+            id="url-input"
+            placeholder="PASTE URL HERE"
+            class="w-full text-xl md:text-2xl bg-black border-2 border-white p-2 md:p-3 rounded"
+          />
+          
+          <div id="button-container">
+            <button
+              id="download-button"
+              class="w-full text-2xl md:text-3xl font-bold bg-white text-black p-2 md:p-3 rounded hover:bg-gray-300"
+            >
+              DOWNLOAD
+            </button>
           </div>
-        );
-      };
+          
+          <div id="terminal-output" class="terminal hidden">
+            <span class="yt-dlp">[yt-dlp]</span>
+            <span class="download">[download]</span>
+            <span id="progress-text">Starting download... wait a min</span>
+          </div>
+          
+          <div id="error-message" class="w-full bg-red-900 border-2 border-red-600 p-3 rounded text-red-300 hidden"></div>
+        </div>
+      </div>
+    </div>
 
-      const App = () => {
-        const [url, setUrl] = useState('');
-        const [loading, setLoading] = useState(false);
-        const [msg, setMsg] = useState({ text: '', type: 'error' });
-
-        async function handleDownload() {
-          setMsg({ text: '', type: 'error' });
-          if (!url) {
-            setMsg({ text: 'ENTER A URL FIRST', type: 'error' });
+    <script>
+      // DOM elements
+      const urlInput = document.getElementById('url-input');
+      const downloadButton = document.getElementById('download-button');
+      const buttonContainer = document.getElementById('button-container');
+      const terminalOutput = document.getElementById('terminal-output');
+      const progressText = document.getElementById('progress-text');
+      const errorMessage = document.getElementById('error-message');
+      
+      // Current download state
+      let currentVideoId = null;
+      let pollInterval = null;
+      
+      // Add event listener to download button
+      downloadButton.addEventListener('click', handleDownload);
+      
+      async function handleDownload() {
+        // Reset UI
+        errorMessage.textContent = '';
+        errorMessage.classList.add('hidden');
+        progressText.textContent = 'Starting download... wait a min';
+        
+        const url = urlInput.value.trim();
+        if (!url) {
+          showError('ENTER A URL FIRST');
+          return;
+        }
+        
+        // Show terminal output, hide button
+        terminalOutput.classList.remove('hidden');
+        downloadButton.disabled = true;
+        downloadButton.classList.add('bg-gray-600', 'cursor-not-allowed');
+        downloadButton.classList.remove('bg-white', 'hover:bg-gray-300');
+        
+        try {
+          // Start download
+          const res = await fetch('http://localhost:3000/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+          });
+          
+          if (!res.ok) {
+            throw new Error(await res.text() || 'Download failed');
+          }
+          
+          const data = await res.json();
+          currentVideoId = data.videoId;
+          console.log('Download started with videoId:', currentVideoId);
+          
+          // Start polling for progress
+          if (pollInterval) clearInterval(pollInterval);
+          
+          pollInterval = setInterval(checkProgress, 500);
+        } catch (err) {
+          console.error('Error starting download:', err);
+          showError(err.message || 'Download failed');
+          resetUI();
+        }
+      }
+      
+      async function checkProgress() {
+        if (!currentVideoId) return;
+        
+        try {
+          const res = await fetch(`http://localhost:3000/progress/${currentVideoId}`);
+          if (!res.ok) {
+            console.error('Progress response not OK:', res.status);
             return;
           }
-
-          setLoading(true);
-          try {
-            // POST to backend and receive the video as streamed response
-            const res = await fetch('http://localhost:3000/download', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url }),
-            });
-
-            if (!res.ok) {
-              const errText = await res.text();
-              throw new Error(errText || 'DOWNLOAD FAILED');
-            }
-
-            // Extract a filename from Content-Disposition header if present
-            let filename = 'video.mp4';
-            const disposition = res.headers.get('Content-Disposition');
-            if (disposition && disposition.includes('filename=')) {
-              filename = decodeURIComponent(
-                disposition.split('filename=')[1].replace(/"/g, '')
-              );
-            }
-
-            // Convert response stream to Blob
-            const blob = await res.blob();
-
-            // Trigger browser download
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Show success message
-            setMsg({ text: 'FINISHED!', type: 'success' });
-            setTimeout(() => setMsg({ text: '', type: 'error' }), 3000);
-          } catch (err) {
-            setMsg({ text: `ERROR: ${err.message}`, type: 'error' });
-          } finally {
-            setLoading(false);
+          
+          const data = await res.json();
+          console.log('Progress data:', data);
+          
+          if (data.message) {
+            // Update progress text directly
+            progressText.textContent = data.message;
           }
+          
+          if (data.status === 'complete') {
+            clearInterval(pollInterval);
+            progressText.textContent = '100% complete - Starting download...';
+            
+            // Download the file using a temporary link element for better compatibility
+            const downloadLink = document.createElement('a');
+            downloadLink.href = `http://localhost:3000/download/${currentVideoId}`;
+            downloadLink.style.display = 'none';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // Reset UI after a delay
+            setTimeout(resetUI, 3000);
+          } else if (data.status === 'error') {
+            clearInterval(pollInterval);
+            showError(data.message || 'Download failed');
+            resetUI();
+          }
+        } catch (err) {
+          console.error('Error checking progress:', err);
+          // Don't stop polling on temporary errors
         }
-
-        return (
-          <div className="h-screen flex flex-col items-center justify-center border-4 border-white m-4 rounded-lg p-4 space-y-8">
-            <h1 className="text-5xl border-b-4 border-white pb-2">DOWNLOAD‑VIDEO.PRO</h1>
-
-            <div className="w-3/4 space-y-4">
-              <input
-                type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="PASTE URL HERE"
-                className="w-full text-2xl bg-black border-2 border-white p-2 rounded focus:outline-none"
-              />
-
-              <DownloadButton onClick={handleDownload} loading={loading} />
-            </div>
-
-            {msg.text && <MessageBox message={msg.text} type={msg.type} />}
-          </div>
-        );
-      };
-
-      ReactDOM.render(<App />, document.getElementById('root'));
+      }
+      
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.remove('hidden');
+      }
+      
+      function resetUI() {
+        terminalOutput.classList.add('hidden');
+        downloadButton.disabled = false;
+        downloadButton.classList.remove('bg-gray-600', 'cursor-not-allowed');
+        downloadButton.classList.add('bg-white', 'hover:bg-gray-300');
+        currentVideoId = null;
+        // Clear the URL input after download completes
+        urlInput.value = '';
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      }
     </script>
   </body>
 </html>
