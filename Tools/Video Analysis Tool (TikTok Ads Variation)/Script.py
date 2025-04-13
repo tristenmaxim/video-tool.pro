@@ -746,7 +746,7 @@ def save_results_to_txt(results, output_path=None):
 def main():
     # Replace these values with your actual video path and API key
     video_path = "/Users/maximtristen/Desktop/downloads/🔥 REPEAT AFTER ME ｜ Anyone Can Make Money Online With Right Pocket Option Strategy-oK2q7SEbgms.mp4"
-    api_key = "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"    
+    api_key = "YOUR_OPENAI_API_KEY"    
     output_txt_path = None  # Set to None for auto-naming or specify a path
 
     print(f"Starting TikTok ad analysis for: {video_path}")

@@ -1,7 +1,7 @@
 # Only Transcribing!!!
 #!/usr/bin/env python3
 # Enhanced Lecture Transcriber with Audio Chunking Support
-#python "/Users/maximtristen/Desktop/Video Analysis Tool 1.1/Script.py" '/Users/maximtristen/Desktop/downloads/Разбор резюмешек｜Кейс №1-P3yjSdyFIAc.mp4' --openai-key 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 --verbose
+#python "/Users/maximtristen/Desktop/Video Analysis Tool 1.1/Script.py" '/Users/maximtristen/Desktop/downloads/Разбор резюмешек｜Кейс №1-P3yjSdyFIAc.mp4' --openai-key YOUR_OPENAI_API_KEY --verbose
 
 import os
 import numpy as np
