@@ -1,0 +1,43 @@
+body {
+  background-color: black;
+  color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.terminal {
+  font-family: 'Courier New', monospace;
+  background-color: #2d3748;
+  border: 2px solid #4a5568;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.terminal .yt-dlp {
+  color: #48bb78; /* green */
+}
+
+.terminal .download {
+  color: #4299e1; /* blue */
+}
+
+@media (max-height: 600px) {
+  h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .space-y-6 > * + * {
+    margin-top: 0.75rem !important;
+  }
+}
+
+/* Pre-apply state styles to reduce layout shifts */
+.btn-disabled {
+  background-color: #4a5568 !important;
+  cursor: not-allowed !important;
+}
+
+.hidden {
+  display: none !important;
+} 

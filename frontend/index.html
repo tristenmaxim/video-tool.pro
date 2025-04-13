@@ -4,38 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video Tool</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body {
-        background-color: black;
-        color: white;
-        font-family: system-ui, -apple-system, sans-serif;
-        height: 100vh;
-        overflow: hidden;
-      }
-      .terminal {
-        font-family: 'Courier New', monospace;
-        background-color: #2d3748;
-        border: 2px solid #4a5568;
-        padding: 16px;
-        border-radius: 4px;
-      }
-      .terminal .yt-dlp {
-        color: #48bb78; /* green */
-      }
-      .terminal .download {
-        color: #4299e1; /* blue */
-      }
-      @media (max-height: 600px) {
-        h1 {
-          font-size: 1.5rem !important;
-          margin-bottom: 0.5rem !important;
-        }
-        .space-y-6 > * + * {
-          margin-top: 0.75rem !important;
-        }
-      }
-    </style>
+    <!-- Preconnect to CDN -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+    <!-- Load Tailwind asynchronously -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <!-- External CSS with long cache time -->
+    <link rel="stylesheet" href="/assets/styles.css" />
   </head>
   <body>
     <div class="h-screen flex flex-col items-center justify-center p-4">
@@ -70,128 +44,7 @@
       </div>
     </div>
 
-    <script>
-      // DOM elements
-      const urlInput = document.getElementById('url-input');
-      const downloadButton = document.getElementById('download-button');
-      const buttonContainer = document.getElementById('button-container');
-      const terminalOutput = document.getElementById('terminal-output');
-      const progressText = document.getElementById('progress-text');
-      const errorMessage = document.getElementById('error-message');
-      
-      // Current download state
-      let currentVideoId = null;
-      let pollInterval = null;
-      
-      // Add event listener to download button
-      downloadButton.addEventListener('click', handleDownload);
-      
-      async function handleDownload() {
-        // Reset UI
-        errorMessage.textContent = '';
-        errorMessage.classList.add('hidden');
-        progressText.textContent = 'Starting download... wait a min';
-        
-        const url = urlInput.value.trim();
-        if (!url) {
-          showError('ENTER A URL FIRST');
-          return;
-        }
-        
-        // Show terminal output, hide button
-        terminalOutput.classList.remove('hidden');
-        downloadButton.disabled = true;
-        downloadButton.classList.add('bg-gray-600', 'cursor-not-allowed');
-        downloadButton.classList.remove('bg-white', 'hover:bg-gray-300');
-        
-        try {
-          // Start download
-          const res = await fetch('http://localhost:3000/download', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url }),
-          });
-          
-          if (!res.ok) {
-            throw new Error(await res.text() || 'Download failed');
-          }
-          
-          const data = await res.json();
-          currentVideoId = data.videoId;
-          console.log('Download started with videoId:', currentVideoId);
-          
-          // Start polling for progress
-          if (pollInterval) clearInterval(pollInterval);
-          
-          pollInterval = setInterval(checkProgress, 500);
-        } catch (err) {
-          console.error('Error starting download:', err);
-          showError(err.message || 'Download failed');
-          resetUI();
-        }
-      }
-      
-      async function checkProgress() {
-        if (!currentVideoId) return;
-        
-        try {
-          const res = await fetch(`http://localhost:3000/progress/${currentVideoId}`);
-          if (!res.ok) {
-            console.error('Progress response not OK:', res.status);
-            return;
-          }
-          
-          const data = await res.json();
-          console.log('Progress data:', data);
-          
-          if (data.message) {
-            // Update progress text directly
-            progressText.textContent = data.message;
-          }
-          
-          if (data.status === 'complete') {
-            clearInterval(pollInterval);
-            progressText.textContent = '100% complete - Starting download...';
-            
-            // Download the file using a temporary link element for better compatibility
-            const downloadLink = document.createElement('a');
-            downloadLink.href = `http://localhost:3000/download/${currentVideoId}`;
-            downloadLink.style.display = 'none';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            
-            // Reset UI after a delay
-            setTimeout(resetUI, 3000);
-          } else if (data.status === 'error') {
-            clearInterval(pollInterval);
-            showError(data.message || 'Download failed');
-            resetUI();
-          }
-        } catch (err) {
-          console.error('Error checking progress:', err);
-          // Don't stop polling on temporary errors
-        }
-      }
-      
-      function showError(message) {
-        errorMessage.textContent = message;
-        errorMessage.classList.remove('hidden');
-      }
-      
-      function resetUI() {
-        terminalOutput.classList.add('hidden');
-        downloadButton.disabled = false;
-        downloadButton.classList.remove('bg-gray-600', 'cursor-not-allowed');
-        downloadButton.classList.add('bg-white', 'hover:bg-gray-300');
-        currentVideoId = null;
-        // Clear the URL input after download completes
-        urlInput.value = '';
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          pollInterval = null;
-        }
-      }
-    </script>
+    <!-- External JS file loaded at the end for better performance -->
+    <script src="/assets/app.js" defer></script>
   </body>
 </html>
